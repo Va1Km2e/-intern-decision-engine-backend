@@ -8,6 +8,8 @@ import ee.taltech.inbankbackend.exceptions.InvalidPersonalCodeException;
 import ee.taltech.inbankbackend.exceptions.NoValidLoanException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
 /**
  * A service class that provides a method for calculating an approved loan amount and period for a customer.
  * The loan amount is calculated based on the customer's credit modifier,
@@ -42,6 +44,11 @@ public class DecisionEngine {
             verifyInputs(personalCode, loanAmount, loanPeriod);
         } catch (Exception e) {
             return new Decision(null, null, e.getMessage());
+        }
+
+        int customerAge = extractCustomerAge(personalCode);
+        if (customerAge < DecisionEngineConstants.MINIMUM_AGE || customerAge > (DecisionEngineConstants.MAXIMUM_AGE - loanPeriod / 12)) {
+            throw new NoValidLoanException("Loan not approved due to age restrictions!");
         }
 
         int outputLoanAmount;
@@ -142,5 +149,20 @@ public class DecisionEngine {
      */
     private double calculateCreditScore(long loanAmount, int loanPeriod) {
         return ((double) creditModifier / loanAmount) * loanPeriod / 10.0;
+    }
+
+    /**
+     * Extracts the customers age from personal code.
+     *
+     * @param personalCode Personal code
+     * @return Extracted customer age
+     */
+    private int extractCustomerAge(String personalCode) {
+        String birthYearString = personalCode.substring(1, 3);
+        int centuryIndicator = Character.getNumericValue(personalCode.charAt(0));
+        int birthYear = (centuryIndicator <= 2) ? 1800 + Integer.parseInt(birthYearString) :
+                (centuryIndicator <= 4) ? 1900 + Integer.parseInt(birthYearString) :
+                        2000 + Integer.parseInt(birthYearString);
+        return LocalDate.now().getYear() - birthYear;
     }
 }
