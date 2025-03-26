@@ -51,6 +51,14 @@ public class DecisionEngine {
             throw new NoValidLoanException("No valid loan found!");
         }
 
+        double creditScore = calculateCreditScore(loanAmount, loanPeriod);
+        if (creditScore < 0.1) {
+            outputLoanAmount = highestValidLoanAmount(loanPeriod);
+        } else {
+            outputLoanAmount = (int) Math.min(loanAmount, highestValidLoanAmount(loanPeriod));
+            }
+
+
         while (highestValidLoanAmount(loanPeriod) < DecisionEngineConstants.MINIMUM_LOAN_AMOUNT) {
             loanPeriod++;
         }
@@ -123,5 +131,16 @@ public class DecisionEngine {
             throw new InvalidLoanPeriodException("Invalid loan period!");
         }
 
+    }
+
+    /**
+     * Calculates the credit score based on the formula provided.
+     *
+     * @param loanAmount Requested loan amount
+     * @param loanPeriod Requested loan period
+     * @return Calculated credit score
+     */
+    private double calculateCreditScore(long loanAmount, int loanPeriod) {
+        return ((double) creditModifier / loanAmount) * loanPeriod / 10.0;
     }
 }
